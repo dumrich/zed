@@ -2,8 +2,8 @@
 Text Editor
 
 ## Todo
-- [ ] Create CLI and Manpage
-- [ ] Create basic user interface components
+- [x] Create CLI and Manpage
+- [-] Create basic user interface components
     - [ ] Dashboard
     - [ ] Statusbar
     - [ ] Tab bar

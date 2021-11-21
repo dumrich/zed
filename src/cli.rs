@@ -78,6 +78,7 @@ impl Cli {
 
 fn resolve_path(path: &str) -> Target {
     let target_path = PathBuf::from(path);
+
     if target_path.is_file() {
         Target::File(target_path)
     } else if target_path.is_dir() {
