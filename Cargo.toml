@@ -6,8 +6,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-zui-core = "0.0.2"
-zui-widgets = "0.0.2"
+zui-core = "0.0.3"
+zui-widgets = "0.0.3"
 snafu = "0.6.10"
 
 [profile.release]

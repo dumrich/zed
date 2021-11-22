@@ -1,8 +1,11 @@
 // Resolve file/directory name
 use crate::error;
+use crate::ui;
 use std::fs::File;
 use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
+use zui_widgets::backend::ZuiBackend;
+use zui_widgets::Terminal;
 
 #[derive(Debug)]
 pub enum Target {
@@ -39,6 +42,7 @@ impl Cli {
     }
 
     pub fn parse_args(&mut self, args: &[String]) -> Result<(), error::Error> {
+        // TODO: Allow args like `-bc` or `-cb`
         for (i, arg) in args.iter().enumerate().skip(1) {
             if arg == &String::from("-b") || arg == &String::from("--backup") {
                 self.backup = true;
@@ -70,9 +74,15 @@ impl Cli {
         Ok(())
     }
 
-    pub fn run(&mut self) -> () {
+    pub fn run(&self) -> () {
         // Entry point to editor
-        println!("{:?}", self);
+        let mut stdout = stdout();
+        let backend = ZuiBackend::new(&mut stdout);
+        let mut terminal = Terminal::new(backend).unwrap();
+        terminal.enter_raw_mode().unwrap();
+        let mut keys = terminal.keys(stdin());
+
+        ui::render_ui(self, &mut terminal, &mut keys).unwrap()
     }
 }
 
@@ -95,6 +105,6 @@ fn resolve_path(path: &str) -> Target {
         }
         Target::File(PathBuf::from(path))
     } else {
-        Target::Empty
+        Target::Dir(PathBuf::from("."))
     }
 }
