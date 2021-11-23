@@ -1,3 +1,5 @@
+cargo-features = ["strip"]
+
 [package]
 name = "zed"
 version = "0.0.1"
@@ -6,12 +8,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-zui-core = "0.0.3"
-zui-widgets = "0.0.3"
+zui-core = {git = "https://github.com/dumrich/zui.git"}
 snafu = "0.6.10"
 
 [profile.release]
-opt-level = "z"
-lto = true
+strip = true
+lto = "fat"
 codegen-units = 1
 panic = "abort"

@@ -4,8 +4,7 @@ use crate::ui;
 use std::fs::File;
 use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
-use zui_widgets::backend::ZuiBackend;
-use zui_widgets::Terminal;
+use zui_core::term::Terminal;
 
 #[derive(Debug)]
 pub enum Target {
@@ -17,7 +16,7 @@ pub enum Target {
 #[derive(Debug)]
 pub struct Cli {
     // Is target file or dir or none
-    target: Target,
+    pub target: Target,
 
     // Should backup file on save
     backup: bool,
@@ -77,12 +76,11 @@ impl Cli {
     pub fn run(&self) -> () {
         // Entry point to editor
         let mut stdout = stdout();
-        let backend = ZuiBackend::new(&mut stdout);
-        let mut terminal = Terminal::new(backend).unwrap();
+        let mut terminal = Terminal::new(&mut stdout).unwrap();
         terminal.enter_raw_mode().unwrap();
-        let mut keys = terminal.keys(stdin());
+        let keys = terminal.keys(stdin());
 
-        ui::render_ui(self, &mut terminal, &mut keys).unwrap()
+        ui::render_ui(self, &mut terminal, keys).unwrap()
     }
 }
 

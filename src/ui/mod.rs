@@ -1,12 +1,17 @@
+use std::io::Write;
+
 // Some traits that interfaces should implement
-use crate::{cli::Cli, error::Error};
+use crate::{
+    cli::{Cli, Target},
+    error::Error,
+};
 use zui_core::key::KeyIterator;
-use zui_widgets::{backend::ZuiBackend, Terminal};
+use zui_core::term::Terminal;
 
 // Create
 mod dashboard;
 //mod statusline;
-//mod finder;
+mod finder;
 
 type ZedError = Result<(), Error>;
 
@@ -17,35 +22,34 @@ pub trait Component {
     fn new() -> Self::Widget;
 
     // Destroy element
-    fn destroy(&mut self, term: &mut Terminal<ZuiBackend>) -> ZedError;
+    fn destroy<T: Write>(&mut self, term: &mut Terminal<T>) -> ZedError;
 
     // Draw the user interface here
-    fn view(&mut self, term: &mut Terminal<ZuiBackend>) -> ZedError;
-
-    // (Private) How to handle a refresh when the state is changed
-    fn update(&mut self) -> ZedError;
+    fn view<T: Write>(&mut self, term: &mut Terminal<T>) -> ZedError;
 
     // Component Keybindings
-    fn handle_key(&mut self, term: &mut Terminal<ZuiBackend>, keys: &mut KeyIterator) -> ZedError;
+    fn handle_key<T: Write>(&mut self, term: &mut Terminal<T>, keys: KeyIterator) -> ZedError;
 }
 
-pub fn render(
-    term: &mut Terminal<ZuiBackend<'_>>,
+pub fn render<T: Write>(
+    term: &mut Terminal<T>,
     c: &mut impl Component,
-    keys: &mut KeyIterator,
+    keys: KeyIterator,
 ) -> ZedError {
     c.view(term).unwrap();
 
     Ok(c.handle_key(term, keys)?)
 }
 
-pub fn render_ui(
-    cli: &Cli,
-    term: &mut Terminal<ZuiBackend<'_>>,
-    keys: &mut KeyIterator,
-) -> ZedError {
+pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator) -> ZedError {
     // Manage the User Interface
-    let mut dashboard = dashboard::Dashboard::new();
-    render(term, &mut dashboard, keys).unwrap();
+    match &cli.target {
+        Target::Dir(_x) => {
+            let mut dashboard = dashboard::Dashboard::new();
+            render(term, &mut dashboard, keys.clone()).unwrap();
+        }
+        Target::File(_x) => (),
+        Target::Empty => (),
+    }
     Ok(())
 }
