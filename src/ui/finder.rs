@@ -15,13 +15,17 @@ fn finder<T: Write>(term: &mut Terminal<T>, x: impl Iterator) {
         .width(60)
         .height(2)
         .y_offset(14);
-    x.render(term).unwrap();
+    let x_deets = x.render(term).unwrap();
 
     let p = Popup::new(term).title("").width(60).height(25);
-    p.render(term).unwrap();
+    let p_deets = p.render(term).unwrap();
+
+    term.set_cursor_to(x_deets.starting_pos.0 + 2, x_deets.starting_pos.1 + 1)
+        .unwrap();
 }
 
 pub struct FileFinder {
+    search: String,
     show_icon: bool,
 }
 
@@ -33,6 +37,7 @@ impl Component for FileFinder {
             // If you change the banner, make sure to edit cursor (view method)
             // No spaces on lines
             show_icon: true,
+            search: String::new(),
         }
     }
 
@@ -47,6 +52,7 @@ impl Component for FileFinder {
     fn view<T: Write>(&mut self, term: &mut Terminal<T>) -> super::ZedError {
         // Inital values
         finder(term, vec![1, 2, 3].iter());
+
         Ok(())
     }
 
@@ -61,6 +67,21 @@ impl Component for FileFinder {
                     self.destroy(term).unwrap();
                     return Ok(());
                 }
+                Key::Char(x) => {
+                    self.search.push(x);
+                    term.print(x.to_string().as_str()).unwrap();
+                    term.set_cursor_to(term.x_pos + 1, term.y_pos).unwrap();
+                    term.show_cursor().unwrap();
+                }
+                Key::Backspace => {
+                    if self.search.len() >= 1 {
+                        self.search = self.search[..self.search.len() - 1].to_string();
+                        term.set_cursor_to(term.x_pos - 1, term.y_pos).unwrap();
+                        term.print(" ").unwrap();
+                        term.set_cursor_to(term.x_pos, term.y_pos).unwrap();
+                        term.show_cursor().unwrap();
+                    }
+                } //TODO: Add Arrow Keys
                 _ => continue,
             }
         }
