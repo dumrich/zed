@@ -116,6 +116,7 @@ impl Component for Dashboard {
                 Key::Char(' ') => match keys.clone().next() {
                     Some(x) => match x {
                         Key::Char('f') => {
+                            finder::finder(term, vec![1, 2, 3].iter());
                             continue;
                         }
                         Key::Char('c') => {
