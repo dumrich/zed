@@ -45,8 +45,10 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
     // Manage the User Interface
     match &cli.target {
         Target::Dir(_x) => {
+            term.switch_screen().unwrap();
             let mut dashboard = dashboard::Dashboard::new();
             render(term, &mut dashboard, keys.clone()).unwrap();
+            term.switch_main().unwrap();
         }
         Target::File(_x) => (),
         Target::Empty => (),

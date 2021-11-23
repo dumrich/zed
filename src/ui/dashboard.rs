@@ -2,11 +2,13 @@ use std::io::Write;
 
 use crate::error::Error;
 
-use super::Component;
+use super::finder::FileFinder;
+use super::{render, Component};
 use crate::ui::finder;
 use zui_core::key::{Key, KeyIterator};
 use zui_core::term::Terminal;
 
+#[derive(Debug, Clone)]
 pub struct Dashboard {
     pub banner: &'static str,
     selected_option: u8,
@@ -34,10 +36,7 @@ impl Component for Dashboard {
     }
 
     fn destroy<T: Write>(&mut self, term: &mut Terminal<T>) -> super::ZedError {
-        match term.switch_main() {
-            Ok(_) => Ok(()),
-            Err(_e) => Err(Error::CouldNotRender),
-        }
+        Ok(())
     }
 
     // Fix all these unwraps
@@ -45,7 +44,6 @@ impl Component for Dashboard {
         // Inital values
         let (x, y) = term.get_size(); // TODO: Fix this
                                       // Setup Rendering
-        term.switch_screen().unwrap();
         term.clear_screen().unwrap();
 
         // Render Logo
@@ -116,7 +114,10 @@ impl Component for Dashboard {
                 Key::Char(' ') => match keys.clone().next() {
                     Some(x) => match x {
                         Key::Char('f') => {
-                            finder::finder(term, vec![1, 2, 3].iter());
+                            term.clear_screen().unwrap();
+                            let mut finder = FileFinder::new();
+                            render(term, &mut finder, keys.clone()).unwrap();
+                            self.view(term);
                             continue;
                         }
                         Key::Char('c') => {
