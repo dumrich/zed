@@ -44,9 +44,9 @@ pub fn render<T: Write>(
 pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator) -> ZedError {
     // Manage the User Interface
     match &cli.target {
-        Target::Dir(_x) => {
+        Target::Dir(x) => {
             term.switch_screen().unwrap();
-            let mut dashboard = dashboard::Dashboard::new();
+            let mut dashboard = dashboard::Dashboard::new().set_dir(x.to_path_buf());
             render(term, &mut dashboard, keys.clone()).unwrap();
             term.switch_main().unwrap();
         }

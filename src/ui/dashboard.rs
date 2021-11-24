@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::path::PathBuf;
 
 use crate::error::Error;
 
@@ -11,10 +12,16 @@ use zui_core::term::Terminal;
 #[derive(Debug, Clone)]
 pub struct Dashboard {
     pub banner: &'static str,
+    pub dir: PathBuf,
     selected_option: u8,
 }
 
-impl Dashboard {}
+impl Dashboard {
+    pub fn set_dir(mut self, p: PathBuf) -> Dashboard {
+        self.dir = p;
+        self
+    }
+}
 
 impl Component for Dashboard {
     type Widget = Dashboard;
@@ -31,6 +38,7 @@ impl Component for Dashboard {
 ███████╗███████╗██████╔╝    
 ╚══════╝╚══════╝╚═════╝     
     ",
+            dir: PathBuf::new(),
             selected_option: 1,
         }
     }
@@ -115,7 +123,7 @@ impl Component for Dashboard {
                     Some(x) => match x {
                         Key::Char('f') => {
                             term.clear_screen().unwrap();
-                            let mut finder = FileFinder::new();
+                            let mut finder = FileFinder::new().set_dir(self.dir.clone());
                             render(term, &mut finder, keys.clone()).unwrap();
                             self.view(term);
                             continue;
