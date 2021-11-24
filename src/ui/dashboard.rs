@@ -64,14 +64,18 @@ impl Component for Dashboard {
 
         // Render Options
         let pos_1 = (x as f64 / 2.5) as u16;
+        // TODO: Fix these
         term.set_cursor_to(pos_1, term.y_pos + 2).unwrap();
-        term.print(" \u{f002}  Find File\t\tSPC f").unwrap();
+        term.print(" \u{f002}  Find File               SPC f")
+            .unwrap();
 
         term.set_cursor_to(pos_1, term.y_pos + 2).unwrap();
-        term.print(" \u{f1fc}  Change Color\t\tSPC c").unwrap();
+        term.print(" \u{f1fc}  Change Color            SPC c")
+            .unwrap();
 
         term.set_cursor_to(pos_1, term.y_pos + 2).unwrap();
-        term.print(" \u{f15c}  Live Grep\t\tSPC g").unwrap();
+        term.print(" \u{f15c}  Live Grep               SPC g")
+            .unwrap();
 
         term.set_cursor_to((x as f64 / 2.19) as u16, term.y_pos + 3)
             .unwrap();

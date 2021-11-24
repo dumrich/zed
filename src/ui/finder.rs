@@ -16,11 +16,8 @@ use zui_core::widgets::{Position, Widget};
 fn finder<T: Write, W: Display>(term: &mut Terminal<T>, r: &[W]) {
     // Generic Finder
 
-    let x = Popup::new(term)
-        .title("Find")
-        .width(60)
-        .height(2)
-        .y_offset(14);
+    let curr_pos = term.get_cursor().unwrap();
+    term.hide_cursor().unwrap();
     let p = Popup::new(term).title("").width(60).height(25);
     let p_deets = p.render(term).unwrap();
 
@@ -28,14 +25,20 @@ fn finder<T: Write, W: Display>(term: &mut Terminal<T>, r: &[W]) {
         .unwrap();
 
     let max_val = (p.height - 1) as usize;
+    let mut clear_line = String::new();
+    for _ in 0..(p.width - 3) {
+        clear_line.push(' ');
+    }
+
     for l in &r[..max_val] {
+        term.print(&clear_line[..]).unwrap();
+        term.set_cursor_to(term.x_pos, term.y_pos).unwrap();
         term.print(l).unwrap();
         term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
     }
-    let x_deets = x.render(term).unwrap();
 
-    term.set_cursor_to(x_deets.starting_pos.0 + 2, x_deets.starting_pos.1 + 1)
-        .unwrap();
+    term.set_cursor_to(curr_pos.0, curr_pos.1).unwrap();
+    term.show_cursor().unwrap()
 }
 
 pub struct FileFinder {
@@ -127,8 +130,18 @@ impl Component for FileFinder {
     // Fix all these unwraps
     fn view<T: Write>(&mut self, term: &mut Terminal<T>) -> super::ZedError {
         // Inital values
-        finder(term, &self.search_dir(&self.dir).unwrap()[..]);
+        let x = Popup::new(term)
+            .title("Find")
+            .width(60)
+            .height(2)
+            .y_offset(14);
 
+        let x_deets = x.render(term).unwrap();
+
+        term.set_cursor_to(x_deets.starting_pos.0 + 2, x_deets.starting_pos.1 + 1)
+            .unwrap();
+
+        finder(term, &self.search_dir(&self.dir).unwrap()[..]);
         Ok(())
     }
 
@@ -145,16 +158,17 @@ impl Component for FileFinder {
                 }
                 Key::Char(x) => {
                     self.search.push(x);
+                    finder(term, &self.search_dir(&self.dir).unwrap()[..]);
                     term.print(x.to_string().as_str()).unwrap();
                     term.set_cursor_to(term.x_pos + 1, term.y_pos).unwrap();
                     term.show_cursor().unwrap();
-                    self.view(term).unwrap();
 
                     continue;
                 }
                 Key::Backspace => {
                     if self.search.len() >= 1 {
                         self.search = self.search[..self.search.len() - 1].to_string();
+                        finder(term, &self.search_dir(&self.dir).unwrap()[..]);
                         term.set_cursor_to(term.x_pos - 1, term.y_pos).unwrap();
                         term.print(" ").unwrap();
                         term.set_cursor_to(term.x_pos, term.y_pos).unwrap();
