@@ -2,24 +2,40 @@
 use super::ZedError;
 use crate::error::Error;
 use crate::ui::Component;
+use std::fmt::{self, Display, Error as FmtError};
 use std::fs::{self, DirEntry};
 use std::io;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
 use zui_core::key::{Key, KeyIterator};
 use zui_core::term::Terminal;
 use zui_core::widgets::popup::Popup;
 use zui_core::widgets::{Position, Widget};
 
-fn finder<T: Write>(term: &mut Terminal<T>, r: Vec<PathBuf>) {
+fn finder<T: Write, W: Display>(term: &mut Terminal<T>, r: &[W]) {
     // Generic Finder
 
+    let x = Popup::new(term)
+        .title("Find")
+        .width(60)
+        .height(2)
+        .y_offset(14);
     let p = Popup::new(term).title("").width(60).height(25);
     let p_deets = p.render(term).unwrap();
 
     term.set_cursor_to(p_deets.starting_pos.0 + 2, p_deets.starting_pos.1 + 1)
         .unwrap();
-    println!("{:?}asd", r);
+
+    let max_val = (p.height - 1) as usize;
+    for l in &r[..max_val] {
+        term.print(l).unwrap();
+        term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+    }
+    let x_deets = x.render(term).unwrap();
+
+    term.set_cursor_to(x_deets.starting_pos.0 + 2, x_deets.starting_pos.1 + 1)
+        .unwrap();
 }
 
 pub struct FileFinder {
@@ -28,30 +44,57 @@ pub struct FileFinder {
     show_icon: bool,
 }
 
+pub struct FileResult {
+    path: PathBuf,
+    icon: &'static str,
+}
+
+impl FileResult {
+    pub fn to_string(&self) -> Option<&str> {
+        self.path.to_str()
+    }
+}
+
+impl Display for FileResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.path.to_str() {
+            Some(x) => write!(f, "{}  {}", self.icon, x),
+            None => Err(FmtError),
+        }
+    }
+}
+
 impl FileFinder {
     pub fn set_dir(mut self, dir: PathBuf) -> FileFinder {
         self.dir = dir.to_path_buf();
         self
     }
 
-    fn search_dir(&self, p: &PathBuf) -> io::Result<Vec<PathBuf>> {
+    fn search_dir(&self, p: &PathBuf) -> io::Result<Vec<FileResult>> {
         let mut dirs_list = Vec::new();
         if p.is_dir() {
-            for entry in fs::read_dir(p)? {
-                let entry = entry?;
+            for entry in WalkDir::new(p)
+                .min_depth(1)
+                .into_iter()
+                .filter_map(|e| e.ok())
+            {
                 let path = entry.path();
-                if path.is_dir() {
-                    dirs_list.append(&mut self.search_dir(p)?);
-                } else {
-                    if self.search != "" {
+
+                if dirs_list.len() <= 30 {
+                    if path.is_dir() {
+                        dirs_list.append(&mut self.search_dir(p)?);
+                    } else {
                         if let Some(x) = path.to_str() {
-                            if x.contains(&self.search) {
-                                dirs_list.push(path.to_owned());
+                            if x.to_owned().contains(&self.search) {
+                                dirs_list.push(FileResult {
+                                    path: path.to_path_buf(),
+                                    icon: "\u{e7a8}",
+                                });
                             }
                         }
-                    } else if self.search == "" {
-                        dirs_list.push(path.to_owned());
                     }
+                } else {
+                    return Ok(dirs_list);
                 }
             }
         }
@@ -84,16 +127,7 @@ impl Component for FileFinder {
     // Fix all these unwraps
     fn view<T: Write>(&mut self, term: &mut Terminal<T>) -> super::ZedError {
         // Inital values
-        let x = Popup::new(term)
-            .title("Find")
-            .width(60)
-            .height(2)
-            .y_offset(14);
-        let x_deets = x.render(term).unwrap();
-        finder(term, self.search_dir(&self.dir).unwrap());
-
-        term.set_cursor_to(x_deets.starting_pos.0 + 2, x_deets.starting_pos.1 + 1)
-            .unwrap();
+        finder(term, &self.search_dir(&self.dir).unwrap()[..]);
 
         Ok(())
     }
@@ -114,6 +148,9 @@ impl Component for FileFinder {
                     term.print(x.to_string().as_str()).unwrap();
                     term.set_cursor_to(term.x_pos + 1, term.y_pos).unwrap();
                     term.show_cursor().unwrap();
+                    self.view(term).unwrap();
+
+                    continue;
                 }
                 Key::Backspace => {
                     if self.search.len() >= 1 {
@@ -123,6 +160,7 @@ impl Component for FileFinder {
                         term.set_cursor_to(term.x_pos, term.y_pos).unwrap();
                         term.show_cursor().unwrap();
                     }
+                    continue;
                 } //TODO: Add Arrow Keys
                 _ => continue,
             }

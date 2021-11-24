@@ -125,7 +125,7 @@ impl Component for Dashboard {
                             term.clear_screen().unwrap();
                             let mut finder = FileFinder::new().set_dir(self.dir.clone());
                             render(term, &mut finder, keys.clone()).unwrap();
-                            self.view(term);
+                            self.view(term).unwrap();
                             continue;
                         }
                         Key::Char('c') => {
