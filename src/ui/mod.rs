@@ -48,6 +48,7 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
             term.switch_screen().unwrap();
             let mut dashboard = dashboard::Dashboard::new().set_dir(x.to_path_buf());
             render(term, &mut dashboard, keys.clone()).unwrap();
+
             term.switch_main().unwrap();
         }
         Target::File(_x) => (),

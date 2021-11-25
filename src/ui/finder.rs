@@ -1,3 +1,5 @@
+const MAX_CHECKS: usize = 1024;
+
 // Generic Finder
 use super::ZedError;
 use crate::error::Error;
@@ -21,20 +23,18 @@ fn finder<T: Write, W: Display>(term: &mut Terminal<T>, r: &[W]) {
     let p = Popup::new(term).title("").width(60).height(25);
     let p_deets = p.render(term).unwrap();
 
-    term.set_cursor_to(p_deets.starting_pos.0 + 2, p_deets.starting_pos.1 + 1)
+    term.set_cursor_to(p_deets.starting_pos.0 + 2, p_deets.ending_pos.1 - 1)
         .unwrap();
 
-    let max_val = (p.height - 1) as usize;
-    let mut clear_line = String::new();
-    for _ in 0..(p.width - 3) {
-        clear_line.push(' ');
+    let mut max_val = (p.height - 1) as usize;
+
+    if max_val > r.len() {
+        max_val = r.len();
     }
 
     for l in &r[..max_val] {
-        term.print(&clear_line[..]).unwrap();
-        term.set_cursor_to(term.x_pos, term.y_pos).unwrap();
         term.print(l).unwrap();
-        term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+        term.set_cursor_to(term.x_pos, term.y_pos - 1).unwrap();
     }
 
     term.set_cursor_to(curr_pos.0, curr_pos.1).unwrap();
@@ -75,26 +75,33 @@ impl FileFinder {
 
     fn search_dir(&self, p: &PathBuf) -> io::Result<Vec<FileResult>> {
         let mut dirs_list = Vec::new();
+        let mut checked_files: usize = 0;
         if p.is_dir() {
             for entry in WalkDir::new(p)
                 .min_depth(1)
                 .into_iter()
                 .filter_map(|e| e.ok())
             {
-                let path = entry.path();
+                if checked_files < MAX_CHECKS {
+                    let path = entry.path().to_owned();
+                    checked_files += 1;
 
-                if dirs_list.len() <= 30 {
-                    if path.is_dir() {
-                        dirs_list.append(&mut self.search_dir(p)?);
-                    } else {
+                    if dirs_list.len() <= 30 {
+                        if path.is_dir() {
+                            continue;
+                        }
                         if let Some(x) = path.to_str() {
                             if x.to_owned().contains(&self.search) {
                                 dirs_list.push(FileResult {
                                     path: path.to_path_buf(),
                                     icon: "\u{e7a8}",
                                 });
+                            } else {
+                                continue;
                             }
                         }
+                    } else {
+                        return Ok(dirs_list);
                     }
                 } else {
                     return Ok(dirs_list);
@@ -158,6 +165,9 @@ impl Component for FileFinder {
                 }
                 Key::Char(x) => {
                     self.search.push(x);
+                    term.set_cursor_to(term.x_pos - 2, term.y_pos - 2).unwrap();
+                    term.clear_above_cursor().unwrap();
+                    term.set_cursor_to(term.x_pos + 2, term.y_pos + 2).unwrap();
                     finder(term, &self.search_dir(&self.dir).unwrap()[..]);
                     term.print(x.to_string().as_str()).unwrap();
                     term.set_cursor_to(term.x_pos + 1, term.y_pos).unwrap();
@@ -168,6 +178,9 @@ impl Component for FileFinder {
                 Key::Backspace => {
                     if self.search.len() >= 1 {
                         self.search = self.search[..self.search.len() - 1].to_string();
+                        term.set_cursor_to(term.x_pos - 2, term.y_pos - 2).unwrap();
+                        term.clear_above_cursor().unwrap();
+                        term.set_cursor_to(term.x_pos + 2, term.y_pos + 2).unwrap();
                         finder(term, &self.search_dir(&self.dir).unwrap()[..]);
                         term.set_cursor_to(term.x_pos - 1, term.y_pos).unwrap();
                         term.print(" ").unwrap();
