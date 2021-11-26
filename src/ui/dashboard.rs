@@ -1,11 +1,7 @@
-use std::io::Write;
-use std::path::PathBuf;
-
-use crate::error::Error;
-
 use super::finder::FileFinder;
 use super::{render, Component};
-use crate::ui::finder;
+use std::io::Write;
+use std::path::PathBuf;
 use zui_core::key::{Key, KeyIterator};
 use zui_core::term::Terminal;
 
@@ -57,6 +53,7 @@ impl Component for Dashboard {
         // Render Logo
         term.set_cursor_to((x as f64 / 2.35) as u16, (y as f64 / 4.3) as u16)
             .unwrap(); // If you change the banner, modify this
+
         for line in self.banner.lines() {
             term.print(line).unwrap();
             term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
@@ -64,6 +61,7 @@ impl Component for Dashboard {
 
         // Render Options
         let pos_1 = (x as f64 / 2.5) as u16;
+
         // TODO: Fix these
         term.set_cursor_to(pos_1, term.y_pos + 2).unwrap();
         term.print(" \u{f002}  Find File               SPC f")
@@ -77,11 +75,12 @@ impl Component for Dashboard {
         term.print(" \u{f15c}  Live Grep               SPC g")
             .unwrap();
 
+        // Custom Message
         term.set_cursor_to((x as f64 / 2.19) as u16, term.y_pos + 3)
             .unwrap();
-        term.print("Loaded 1 Plugin").unwrap();
+        term.print("\u{f004}  by dumrich").unwrap();
 
-        // End
+        // End Render
         term.set_cursor_to(pos_1 + 4, term.y_pos - 7).unwrap();
         term.show_cursor().unwrap();
 
@@ -96,16 +95,30 @@ impl Component for Dashboard {
         for key in keys.clone() {
             match key {
                 Key::Ctrl('q') => {
+                    // Destroy dashboard
                     self.destroy(term).unwrap();
                     return Ok(());
                 }
+                Key::Enter | Key::Tab => match self.selected_option {
+                    1 => {
+                        // Render FileFinder
+                        term.clear_screen().unwrap();
+                        let mut finder = FileFinder::new().set_dir(self.dir.clone());
+                        render(term, &mut finder, keys.clone()).unwrap();
+                        self.view(term).unwrap();
+                        continue;
+                    }
+                    _ => continue,
+                },
                 Key::Down | Key::Char('j') => {
+                    // Store each option as number
                     if self.selected_option != 3 {
                         term.set_cursor_to(
                             (term.get_size().0 as f64 / 2.5) as u16 + 4,
                             term.y_pos + 2,
                         )
                         .unwrap();
+                        // Change the selected Option
                         self.selected_option += 1;
                     }
                     continue;
@@ -117,6 +130,7 @@ impl Component for Dashboard {
                             term.y_pos - 2,
                         )
                         .unwrap();
+                        // Change the selected Option
                         self.selected_option -= 1;
                     }
                     continue;
@@ -124,7 +138,9 @@ impl Component for Dashboard {
 
                 // User Space Bindings
                 Key::Char(' ') => match keys.clone().next() {
+                    // If the next key...
                     Some(x) => match x {
+                        // Render the File Finder
                         Key::Char('f') => {
                             term.clear_screen().unwrap();
                             let mut finder = FileFinder::new().set_dir(self.dir.clone());
@@ -132,9 +148,11 @@ impl Component for Dashboard {
                             self.view(term).unwrap();
                             continue;
                         }
+                        // Render the color switcher
                         Key::Char('c') => {
                             continue;
                         }
+                        // Live Grepper
                         Key::Char('g') => {
                             continue;
                         }

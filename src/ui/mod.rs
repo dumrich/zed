@@ -1,6 +1,6 @@
 use std::io::Write;
 
-// Some traits that interfaces should implement
+// Some traits that components should implement
 use crate::{
     cli::{Cli, Target},
     error::Error,
