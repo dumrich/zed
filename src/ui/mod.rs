@@ -1,4 +1,7 @@
 use std::io::Write;
+use std::thread;
+use std::time;
+use std::time::Duration;
 
 // Some traits that components should implement
 use crate::{
@@ -9,14 +12,18 @@ use zui_core::key::KeyIterator;
 use zui_core::term::Terminal;
 
 // Create
+mod colors;
 mod dashboard;
-//mod statusline;
 mod finder;
 
 type ZedError = Result<(), Error>;
 
 pub trait Component {
+    // Widget Type
     type Widget;
+
+    // HandleKey Types
+    type WidgetReturn;
 
     // Create new Component
     fn new() -> Self::Widget;
@@ -28,17 +35,17 @@ pub trait Component {
     fn view<T: Write>(&mut self, term: &mut Terminal<T>) -> ZedError;
 
     // Component Keybindings
-    fn handle_key<T: Write>(&mut self, term: &mut Terminal<T>, keys: KeyIterator) -> ZedError;
-}
+    fn handle_key<T: Write>(
+        &mut self,
+        term: &mut Terminal<T>,
+        keys: KeyIterator,
+    ) -> Result<Self::WidgetReturn, Error>;
 
-pub fn render<T: Write>(
-    term: &mut Terminal<T>,
-    c: &mut impl Component,
-    keys: KeyIterator,
-) -> ZedError {
-    c.view(term).unwrap();
-
-    Ok(c.handle_key(term, keys)?)
+    fn render<T: Write>(
+        &mut self,
+        term: &mut Terminal<T>,
+        keys: KeyIterator,
+    ) -> Result<Self::WidgetReturn, Error>;
 }
 
 pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator) -> ZedError {
@@ -47,7 +54,16 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
         Target::Dir(x) => {
             term.switch_screen().unwrap();
             let mut dashboard = dashboard::Dashboard::new().set_dir(x.to_path_buf());
-            render(term, &mut dashboard, keys.clone()).unwrap();
+
+            match dashboard.render(term, keys.clone()) {
+                Ok(t) => match t {
+                    Target::File(m) => {}
+                    _ => (),
+                },
+                Err(e) => {
+                    eprintln!("Something went wrong at {}", e);
+                }
+            }
 
             term.switch_main().unwrap();
         }

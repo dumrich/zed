@@ -1,5 +1,6 @@
 const MAX_CHECKS: usize = 1024;
 
+use crate::cli::Target;
 // Generic Finder
 use crate::error::Error;
 use crate::ui::Component;
@@ -156,6 +157,9 @@ fn derive_file_type(p: &Path) -> &'static str {
 impl Component for FileFinder {
     type Widget = FileFinder;
 
+    // WidgetReturn
+    type WidgetReturn = Target;
+
     fn new() -> Self::Widget {
         FileFinder {
             results: vec![FileResult::new()],
@@ -195,29 +199,31 @@ impl Component for FileFinder {
         &mut self,
         term: &mut Terminal<T>,
         keys: KeyIterator,
-    ) -> super::ZedError {
+    ) -> Result<Self::WidgetReturn, Error> {
         for key in keys.clone() {
             match key {
                 Key::Esc => {
                     self.destroy(term).unwrap();
-                    return Ok(());
+                    return Ok(Target::Empty);
                 }
+                Key::Enter => match self.currently_selected_index {
+                    Some(p) => {
+                        return Ok(Target::File(self.results[p].path.clone()));
+                    }
+                    None => continue,
+                },
                 Key::Up => match self.currently_selected_index {
                     Some(p) => {
-                        if p >= self.results.len() - 1 {
-                            continue;
-                        } else {
+                        if p <= self.results.len() - 2 {
                             self.currently_selected_index = Some(p + 1);
                             term.set_cursor_to(term.x_pos, term.y_pos - 1).unwrap();
                         }
-                        continue;
                     }
                     None => {
                         self.currently_selected_index = Some(0);
                         let go_back = self.search.chars().count();
                         term.set_cursor_to(term.x_pos - go_back as u16 + 3, term.y_pos - 3)
                             .unwrap();
-                        continue;
                     }
                 },
                 Key::Down => match self.currently_selected_index {
@@ -231,7 +237,6 @@ impl Component for FileFinder {
                             self.currently_selected_index = Some(p - 1);
                             term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
                         }
-                        continue;
                     }
                     None => {
                         continue;
@@ -249,8 +254,6 @@ impl Component for FileFinder {
 
                     term.print(x.to_string().as_str()).unwrap();
                     term.set_cursor_to(term.x_pos + 1, term.y_pos).unwrap();
-
-                    continue;
                 }
                 Key::Backspace => {
                     if self.search.len() >= 1 {
@@ -267,11 +270,26 @@ impl Component for FileFinder {
                         term.print(" ").unwrap();
                         term.set_cursor_to(term.x_pos, term.y_pos).unwrap();
                     }
-                    continue;
                 } //TODO: Add Arrow Keys
                 _ => continue,
             }
         }
-        Ok(())
+        Ok(Target::Empty)
+    }
+
+    fn render<T: Write>(
+        &mut self,
+        term: &mut Terminal<T>,
+        keys: KeyIterator,
+    ) -> Result<Self::WidgetReturn, Error> {
+        self.view(term).unwrap();
+
+        match self.handle_key(term, keys.clone()) {
+            Ok(s) => match s {
+                Target::File(x) => return Ok(Target::File(x)),
+                _ => return Ok(Target::Empty),
+            },
+            Err(s) => Err(s),
+        }
     }
 }
