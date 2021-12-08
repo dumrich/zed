@@ -8,10 +8,12 @@ Text Editor
 - [-] Create basic user interface components
     - [x] Dashboard
     - [-] Statusbar
-    - [-] Tab bar
+    - [ ] Tab bar
 - [x] Create utility components
     - [x] Generic-over-iterator telescope like finder
     - [x] Live Grep and Live Files
+        - [ ] Respect .gitignore
+        - [ ] Remove flashing (lessen the number of dirs)
 - [-] Text Editing
     - [x] Display Text
     - [ ] Move around text
@@ -24,6 +26,9 @@ Text Editor
         - [ ] Undo/Redo
         - [ ] Copy and Paste
 ### Finishing touches
+- [ ] Fix minor bugs:
+    - [ ] Half screen finder bug
+    - [ ] Make it work on all terminal sizes
 - [ ] Add Proper Errors and Error Handling
 - [ ] Performance optimizations
 - [ ] LSP (\*in like a year or so)

@@ -27,6 +27,15 @@ pub enum Language {
     Markdown,
     Go,
 }
+
+// Vi-Editing modes
+#[derive(Copy, Debug, Clone)]
+pub enum Mode {
+    Insert,
+    Visual,
+    Normal,
+}
+
 // Individual Buffer Struct
 pub struct Buffer<'a> {
     pub p: Option<&'a Path>,
@@ -34,6 +43,7 @@ pub struct Buffer<'a> {
     lang: Language,
     pub line_count: usize,
     pub rope: Rope,
+    pub mode: Mode,
 }
 
 impl<'a> Buffer<'a> {
@@ -44,7 +54,13 @@ impl<'a> Buffer<'a> {
             lang: Language::Txt,
             line_count: 0,
             rope: Rope::new(),
+            mode: Mode::Normal,
         }
+    }
+
+    pub fn set_mode(mut self, m: Mode) -> Buffer<'a> {
+        self.mode = m;
+        self
     }
 
     pub fn set_path(mut self, p: &'a Path) -> Buffer<'a> {
