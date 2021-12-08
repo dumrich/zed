@@ -7,7 +7,7 @@ pub mod cli;
 
 //pub mod config; // Search, Copy + Paste, Matching, Syntax
 
-//pub mod editor;
+pub mod backend;
 
 pub mod error;
 

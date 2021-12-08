@@ -3,6 +3,8 @@ use std::thread;
 use std::time;
 use std::time::Duration;
 
+use crate::backend::buffer::Buffer;
+use crate::backend::editor::Editor;
 // Some traits that components should implement
 use crate::{
     cli::{Cli, Target},
@@ -14,6 +16,7 @@ use zui_core::term::Terminal;
 // Create
 mod colors;
 mod dashboard;
+mod editor;
 mod finder;
 
 type ZedError = Result<(), Error>;
@@ -57,7 +60,14 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
 
             match dashboard.render(term, keys.clone()) {
                 Ok(t) => match t {
-                    Target::File(m) => {}
+                    Target::File(m) => {
+                        let mut b = Buffer::new().set_path(&m);
+                        let mut e = Editor::new().push_buf(b);
+
+                        // Should probably rename this to something else
+                        let mut editor = editor::Editor::new().set_editor(e);
+                        editor.render(term, keys.clone()).unwrap();
+                    }
                     _ => (),
                 },
                 Err(e) => {

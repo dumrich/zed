@@ -2,16 +2,18 @@
 Text Editor
 
 ## Todo
+
+### Prototype
 - [x] Create CLI and Manpage
 - [-] Create basic user interface components
-    - [ ] Dashboard
-    - [ ] Statusbar
-    - [ ] Tab bar
-- [ ] Create utility components
-    - [ ] Generic-over-iterator telescope like finder
-    - [ ] Live Grep and Live Files
-- [ ] Text Editing
-    - [ ] Display Text
+    - [x] Dashboard
+    - [-] Statusbar
+    - [-] Tab bar
+- [x] Create utility components
+    - [x] Generic-over-iterator telescope like finder
+    - [x] Live Grep and Live Files
+- [-] Text Editing
+    - [x] Display Text
     - [ ] Move around text
     - [ ] Edit and save text
     - [ ] Keybindings
@@ -21,6 +23,9 @@ Text Editor
         - [ ] Find/Replace
         - [ ] Undo/Redo
         - [ ] Copy and Paste
+### Finishing touches
+- [ ] Add Proper Errors and Error Handling
+- [ ] Performance optimizations
 - [ ] LSP (\*in like a year or so)
 
 ## What is it?
