@@ -40,7 +40,8 @@ pub enum Mode {
 pub struct Buffer<'a> {
     pub p: Option<&'a Path>,
     pub name: Option<&'a OsStr>,
-    lang: Language,
+    pub lang: Language,
+    pub lang_str: &'static str,
     pub line_count: usize,
     pub rope: Rope,
     pub mode: Mode,
@@ -52,6 +53,7 @@ impl<'a> Buffer<'a> {
             p: None,
             name: None,
             lang: Language::Txt,
+            lang_str: "",
             line_count: 0,
             rope: Rope::new(),
             mode: Mode::Normal,
@@ -66,10 +68,43 @@ impl<'a> Buffer<'a> {
     pub fn set_path(mut self, p: &'a Path) -> Buffer<'a> {
         self.name = p.file_name();
         self.lang = derive_file_type(p);
+        self.lang_str = derive_file_str(p);
         self.rope = Rope::from_reader(BufReader::new(File::open(&p).unwrap())).unwrap();
         self.line_count = self.rope.len_lines();
         self.p = Some(p);
         self
+    }
+}
+
+fn derive_file_str(p: &Path) -> &'static str {
+    let mut file_map: HashMap<&OsStr, &'static str> = HashMap::new();
+    file_map.insert(OsStr::new("rs"), "\u{e7a8} Rust");
+    file_map.insert(OsStr::new("md"), "\u{e73e} Markdown");
+    file_map.insert(OsStr::new("py"), "\u{e73c} Python");
+    file_map.insert(OsStr::new("asm"), "Assembly");
+    file_map.insert(OsStr::new("c"), "\u{e61e} C");
+    file_map.insert(OsStr::new("cpp"), "\u{e61d} C++");
+    file_map.insert(OsStr::new("h"), "Header");
+    file_map.insert(OsStr::new("html"), "\u{e736} HTML");
+    file_map.insert(OsStr::new("css"), "\u{e749} CSS");
+    file_map.insert(OsStr::new("go"), "\u{e626} Go");
+    file_map.insert(OsStr::new("lua"), "\u{e620} Lua");
+    file_map.insert(OsStr::new("php"), "\u{e73d} PHP");
+    file_map.insert(OsStr::new("pl"), "\u{e769} Perl");
+    file_map.insert(OsStr::new("js"), "\u{e74e} Javascript");
+    file_map.insert(OsStr::new("java"), "\u{e738} Java");
+    file_map.insert(OsStr::new("json"), "\u{fb25} Json");
+    file_map.insert(OsStr::new("cs"), "\u{f81a} C#");
+
+    let ext = p.extension();
+
+    if let Some(x) = ext {
+        match file_map.get(x) {
+            Some(&p) => p,
+            None => "TXT",
+        }
+    } else {
+        "TXT"
     }
 }
 

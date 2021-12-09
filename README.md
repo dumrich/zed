@@ -29,6 +29,8 @@ Text Editor
 - [ ] Fix minor bugs:
     - [ ] Half screen finder bug
     - [ ] Make it work on all terminal sizes
+        - [ ] Statusbar
+        - [ ] Dynamic resizing
 - [ ] Add Proper Errors and Error Handling
 - [ ] Performance optimizations
 - [ ] LSP (\*in like a year or so)

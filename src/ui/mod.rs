@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::path::PathBuf;
 use std::thread;
 use std::time;
 use std::time::Duration;
@@ -51,6 +52,15 @@ pub trait Component {
     ) -> Result<Self::WidgetReturn, Error>;
 }
 
+fn render_editor<T: Write>(file_path: PathBuf, term: &mut Terminal<T>, k: KeyIterator) -> ZedError {
+    let b = Buffer::new().set_path(&file_path);
+    let e = Editor::new().push_buf(b);
+
+    // Should probably rename this to something else
+    let mut editor = editor::Editor::new().set_editor(e);
+    editor.render(term, k)
+}
+
 pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator) -> ZedError {
     // Manage the User Interface
     match &cli.target {
@@ -61,12 +71,7 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
             match dashboard.render(term, keys.clone()) {
                 Ok(t) => match t {
                     Target::File(m) => {
-                        let mut b = Buffer::new().set_path(&m);
-                        let mut e = Editor::new().push_buf(b);
-
-                        // Should probably rename this to something else
-                        let mut editor = editor::Editor::new().set_editor(e);
-                        editor.render(term, keys.clone()).unwrap();
+                        render_editor(m, term, keys.clone()).unwrap();
                     }
                     _ => (),
                 },
@@ -77,7 +82,7 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
 
             term.switch_main().unwrap();
         }
-        Target::File(_x) => (),
+        Target::File(x) => render_editor(x.to_path_buf(), term, keys.clone()).unwrap(),
         Target::Empty => (),
     }
     Ok(())
