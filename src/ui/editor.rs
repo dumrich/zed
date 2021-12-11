@@ -1,13 +1,13 @@
-use super::colors;
 use super::Component;
 use crate::backend::buffer;
 use crate::backend::buffer::Buffer;
 use crate::backend::editor;
 use crate::error::Error;
 use buffer::Mode;
+use ropey::RopeSlice;
 use std::io;
 use std::io::Write;
-use zui_core::color::{self, Color};
+use zui_core::color::{self, fg, Color};
 use zui_core::key::{Key, KeyIterator};
 use zui_core::term::Terminal;
 
@@ -95,6 +95,21 @@ impl<'a> Editor<'a> {
     }
 }
 
+fn draw_line<T: Write>(
+    term: &mut Terminal<T>,
+    line: &RopeSlice,
+    line_num: u64,
+    x_size: u16,
+) -> Result<(), io::ErrorKind> {
+    term.print(fg(Color::RGB(153, 153, 102))).unwrap();
+    term.print(line_num).unwrap();
+    term.print(" ").unwrap();
+    term.print(fg(Color::Reset)).unwrap();
+    term.print(line).unwrap();
+    term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+    Ok(())
+}
+
 impl<'a> Component for Editor<'a> {
     type Widget = Editor<'a>;
 
@@ -105,7 +120,7 @@ impl<'a> Component for Editor<'a> {
         Editor { editor: None }
     }
 
-    fn destroy<T: Write>(&mut self, term: &mut Terminal<T>) -> super::ZedError {
+    fn destroy<T: Write>(&mut self, _term: &mut Terminal<T>) -> super::ZedError {
         Ok(())
     }
 
@@ -125,8 +140,13 @@ impl<'a> Component for Editor<'a> {
 
                 term.set_cursor_to(1, 1).unwrap();
                 for line in 0..y - 2 {
-                    term.print(curr_buf.rope.line(line.into())).unwrap();
-                    term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+                    if curr_buf.line_count > line.into() {
+                        let curr_line = curr_buf.rope.line(line.into());
+                        draw_line(term, &curr_line, line.into(), x).unwrap();
+                    } else {
+                        term.print("~").unwrap();
+                        term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+                    }
                 }
                 term.set_cursor_to(1, 1).unwrap();
             }
