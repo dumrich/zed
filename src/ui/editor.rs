@@ -139,7 +139,7 @@ impl<'a> Component for Editor<'a> {
                 draw_statusline(term, curr_buf, x).unwrap();
 
                 term.set_cursor_to(1, 1).unwrap();
-                for line in 0..y - 2 {
+                for line in 1..y {
                     if curr_buf.line_count > line.into() {
                         let curr_line = curr_buf.rope.line(line.into());
                         draw_line(term, &curr_line, line.into(), x).unwrap();
