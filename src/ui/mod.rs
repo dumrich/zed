@@ -1,8 +1,6 @@
+use std::cell::RefCell;
 use std::io::Write;
 use std::path::PathBuf;
-use std::thread;
-use std::time;
-use std::time::Duration;
 
 use crate::backend::buffer::Buffer;
 use crate::backend::editor::Editor;
@@ -54,10 +52,11 @@ pub trait Component {
 
 fn render_editor<T: Write>(file_path: PathBuf, term: &mut Terminal<T>, k: KeyIterator) -> ZedError {
     let b = Buffer::new().set_path(&file_path);
-    let e = Editor::new().push_buf(b);
+    let e = Editor::new();
 
     // Should probably rename this to something else
     let mut editor = editor::Editor::new().set_editor(e);
+    editor.push_buf(&b);
     editor.render(term, k)
 }
 

@@ -5,10 +5,10 @@ Text Editor
 
 ### Prototype
 - [x] Create CLI and Manpage
-- [-] Create basic user interface components
+- [x] Create basic user interface components
     - [x] Dashboard
-    - [-] Statusbar
-    - [ ] Tab bar
+    - [x] Statusbar
+    
 - [x] Create utility components
     - [x] Generic-over-iterator telescope like finder
     - [x] Live Grep and Live Files
@@ -16,12 +16,13 @@ Text Editor
         - [ ] Remove flashing (lessen the number of dirs)
 - [-] Text Editing
     - [x] Display Text
-    - [ ] Move around text
+    - [-] Move around text
     - [ ] Edit and save text
     - [ ] Keybindings
 - [ ] Configuration
     - [ ] Package Management
     - [ ] Essential Packages
+        - [ ] Tab bar
         - [ ] Find/Replace
         - [ ] Undo/Redo
         - [ ] Copy and Paste

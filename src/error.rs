@@ -6,4 +6,6 @@ pub enum Error {
     ConfigNotFound,
     #[snafu(display("Could not render component. Are you on Windows?"))]
     CouldNotRender,
+    #[snafu(display("Position out of bounds"))]
+    CouldNotMove,
 }

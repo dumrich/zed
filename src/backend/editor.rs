@@ -7,7 +7,8 @@ pub struct Editor<'a> {
     pub dir: Option<PathBuf>,
     pub anon: bool,
     pub num_buf: usize,
-    pub buffers: Option<Vec<Buffer<'a>>>,
+    pub cur_buf: Option<&'a Buffer<'a>>,
+    pub buffers: Vec<&'a Buffer<'a>>,
 }
 
 impl<'a> Editor<'a> {
@@ -16,7 +17,8 @@ impl<'a> Editor<'a> {
             dir: None,
             anon: false,
             num_buf: 0,
-            buffers: None,
+            cur_buf: None,
+            buffers: Vec::new(),
         }
     }
 
@@ -28,20 +30,5 @@ impl<'a> Editor<'a> {
     pub fn set_anon(mut self) -> Editor<'a> {
         self.anon = true;
         self
-    }
-
-    pub fn push_buf(mut self, buf: Buffer<'a>) -> Editor<'a> {
-        match &mut self.buffers {
-            Some(x) => {
-                x.push(buf);
-                self
-            }
-            None => {
-                let mut buf_vec = Vec::new();
-                buf_vec.push(buf);
-                self.buffers = Some(buf_vec);
-                self
-            }
-        }
     }
 }

@@ -210,7 +210,7 @@ impl Component for Dashboard {
     ) -> Result<Self::WidgetReturn, Error> {
         self.view(term).unwrap();
 
-        match self.handle_key(term, keys.clone()) {
+        match self.handle_key(term, keys) {
             Ok(s) => match s {
                 Target::File(x) => return Ok(Target::File(x)),
                 _ => return Ok(Target::Empty),

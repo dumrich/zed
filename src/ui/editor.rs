@@ -86,12 +86,44 @@ fn draw_statusline<T: Write>(
 
 pub struct Editor<'a> {
     pub editor: Option<editor::Editor<'a>>,
+    pub current_line: usize,
+    pub current_index: usize,
 }
 
 impl<'a> Editor<'a> {
     pub fn set_editor(mut self, e: editor::Editor<'a>) -> Editor<'a> {
         self.editor = Some(e);
         self
+    }
+
+    pub fn push_buf(&mut self, buf: &'a Buffer<'a>) {
+        if let Some(e) = &mut self.editor {
+            e.buffers.push(buf);
+            e.cur_buf = Some(e.buffers[e.buffers.len() - 1]);
+        }
+    }
+
+    // Movement methods
+    pub fn move_up<T: Write>(&mut self, term: &mut Terminal<T>) -> Result<(), Error> {
+        if self.current_line > 1 {
+            self.current_line -= 1;
+            term.set_cursor_to(term.x_pos, term.y_pos - 1).unwrap();
+            return Ok(());
+        }
+        Err(Error::CouldNotMove)
+    }
+
+    pub fn move_down<T: Write>(
+        &mut self,
+        term: &mut Terminal<T>,
+        buf: &Buffer<'a>,
+    ) -> Result<(), Error> {
+        if buf.line_count - 1 > self.current_line {
+            self.current_line += 1;
+            term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+            return Ok(());
+        }
+        Err(Error::CouldNotMove)
     }
 }
 
@@ -112,7 +144,11 @@ impl<'a> Component for Editor<'a> {
     type WidgetReturn = ();
 
     fn new() -> Self::Widget {
-        Editor { editor: None }
+        Editor {
+            editor: None,
+            current_line: 1,
+            current_index: 1,
+        }
     }
 
     fn destroy<T: Write>(&mut self, _term: &mut Terminal<T>) -> super::ZedError {
@@ -126,19 +162,17 @@ impl<'a> Component for Editor<'a> {
 
         // Render Lines
         if let Some(e) = &mut self.editor {
-            if let Some(b) = &mut e.buffers {
+            if let Some(cur_buf) = e.cur_buf {
                 // Currently selected buffer
-                let curr_buf = &b[e.num_buf];
-
                 term.set_cursor_to(1, term.rel_size.1).unwrap();
-                draw_statusline(term, curr_buf, x).unwrap();
+                draw_statusline(term, cur_buf, x).unwrap();
 
                 term.set_cursor_to(1, 1).unwrap();
-                let buff_lc = curr_buf.line_count;
+                let buff_lc = cur_buf.line_count;
 
                 let mut buf_offset = 0;
                 match buff_lc {
-                    1..=9 => {
+                    0..=9 => {
                         buf_offset = 1;
                     }
                     10..=99 => {
@@ -155,37 +189,40 @@ impl<'a> Component for Editor<'a> {
                     }
                 }
 
-                for line in 1..y {
+                for line in 0..y - 1 {
                     if buff_lc > line.into() {
                         // Line numbers + offset
                         term.print(fg(Color::RGB(153, 153, 102))).unwrap();
 
                         let mut o_str = String::new();
                         let mut o_count = buf_offset;
-                        if (1..10).contains(&line) {
+                        if (0..9).contains(&line) {
                             o_count -= 1;
-                        } else if (10..100).contains(&line) {
+                        } else if (9..99).contains(&line) {
                             o_count -= 2;
-                        } else if (100..1000).contains(&line) {
+                        } else if (99..999).contains(&line) {
                             o_count -= 3;
+                        } else if (999..9999).contains(&line) {
+                            o_count -= 4;
                         }
+
                         for _ in 0..o_count {
                             o_str.push(' ');
                         }
                         term.print(o_str).unwrap();
-                        term.print(line).unwrap();
+                        term.print(line + 1).unwrap();
                         term.print(fg(Color::Reset)).unwrap();
                         term.print(" ").unwrap();
 
                         // Render text
-                        let curr_line = curr_buf.rope.line(line.into());
+                        let curr_line = cur_buf.rope.line(line.into());
                         draw_line(term, &curr_line, x).unwrap();
                     } else {
                         term.print("~").unwrap();
                         term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
                     }
                 }
-                term.set_cursor_to(1, 1).unwrap();
+                term.set_cursor_to(buf_offset + 2, 1).unwrap();
             }
         }
 
@@ -199,9 +236,23 @@ impl<'a> Component for Editor<'a> {
         term: &mut Terminal<T>,
         keys: KeyIterator,
     ) -> Result<Self::WidgetReturn, Error> {
-        for key in keys.clone() {
+        for key in keys {
             match key {
                 Key::Ctrl('q') => return Ok(()),
+                Key::Up | Key::Char('j') => {
+                    if let Err(e) = self.move_up(term) {
+                        continue;
+                    }
+                }
+                Key::Down | Key::Char('k') => {
+                    if let Some(e) = &self.editor {
+                        if let Some(b) = e.cur_buf {
+                            if let Err(i) = self.move_down(term, b) {
+                                continue;
+                            }
+                        }
+                    }
+                }
                 _ => continue,
             }
         }
@@ -215,7 +266,7 @@ impl<'a> Component for Editor<'a> {
     ) -> Result<Self::WidgetReturn, Error> {
         self.view(term).unwrap();
 
-        match self.handle_key(term, keys.clone()) {
+        match self.handle_key(term, keys) {
             Ok(s) => Ok(()),
             Err(s) => Err(s),
         }
