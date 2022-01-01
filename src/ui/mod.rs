@@ -57,7 +57,8 @@ fn render_editor<T: Write>(file_path: PathBuf, term: &mut Terminal<T>, k: KeyIte
     // Should probably rename this to something else
     let mut editor = editor::Editor::new().set_editor(e);
     editor.push_buf(&b);
-    editor.render(term, k)
+    editor.render(term, k).unwrap();
+    editor.destroy(term)
 }
 
 pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator) -> ZedError {
@@ -70,7 +71,7 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
             match dashboard.render(term, keys.clone()) {
                 Ok(t) => match t {
                     Target::File(m) => {
-                        render_editor(m, term, keys.clone()).unwrap();
+                        render_editor(m, term, keys).unwrap();
                     }
                     _ => (),
                 },
@@ -78,11 +79,12 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
                     eprintln!("Something went wrong at {}", e);
                 }
             }
-
-            term.switch_main().unwrap();
         }
-        Target::File(x) => render_editor(x.to_path_buf(), term, keys.clone()).unwrap(),
+        Target::File(x) => render_editor(x.to_path_buf(), term, keys).unwrap(),
         Target::Empty => (),
     }
+
+    term.clear_screen().unwrap();
+    term.switch_main().unwrap();
     Ok(())
 }

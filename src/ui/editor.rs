@@ -88,6 +88,7 @@ pub struct Editor<'a> {
     pub editor: Option<editor::Editor<'a>>,
     pub current_line: usize,
     pub current_index: usize,
+    shown_lines: (usize, usize), // Exclusive, inclusive
 }
 
 impl<'a> Editor<'a> {
@@ -118,12 +119,25 @@ impl<'a> Editor<'a> {
         term: &mut Terminal<T>,
         buf: &Buffer<'a>,
     ) -> Result<(), Error> {
-        if buf.line_count - 1 > self.current_line {
+        if buf.line_count > self.current_line {
             self.current_line += 1;
-            term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+            if self.current_line <= (self.shown_lines.1) {
+                term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
+            } else {
+                self.shown_lines.0 += 1;
+                self.view(term).unwrap();
+            }
             return Ok(());
         }
         Err(Error::CouldNotMove)
+    }
+
+    fn move_to_line<T: Write>(&mut self, term: &mut Terminal<T>) -> Result<(), Error> {
+        Ok(())
+    }
+
+    fn move_to_char<T: Write>(&mut self, term: &mut Terminal<T>) -> Result<(), Error> {
+        Ok(())
     }
 }
 
@@ -148,10 +162,11 @@ impl<'a> Component for Editor<'a> {
             editor: None,
             current_line: 1,
             current_index: 1,
+            shown_lines: (0, 1),
         }
     }
 
-    fn destroy<T: Write>(&mut self, _term: &mut Terminal<T>) -> super::ZedError {
+    fn destroy<T: Write>(&mut self, term: &mut Terminal<T>) -> super::ZedError {
         Ok(())
     }
 
@@ -160,9 +175,17 @@ impl<'a> Component for Editor<'a> {
         let (x, y) = term.get_size(); // TODO: Fix this
         term.clear_screen().unwrap();
 
+        let (_curr_x, curr_y) = (term.x_pos, term.y_pos);
+
         // Render Lines
         if let Some(e) = &mut self.editor {
             if let Some(cur_buf) = e.cur_buf {
+                // Calculate last line
+                let mut last_line = self.shown_lines.0 + y as usize;
+                if last_line >= cur_buf.line_count {
+                    last_line = cur_buf.line_count;
+                }
+                self.shown_lines.1 = last_line;
                 // Currently selected buffer
                 term.set_cursor_to(1, term.rel_size.1).unwrap();
                 draw_statusline(term, cur_buf, x).unwrap();
@@ -171,6 +194,7 @@ impl<'a> Component for Editor<'a> {
                 let buff_lc = cur_buf.line_count;
 
                 let mut buf_offset = 0;
+                // Replace with logarithm
                 match buff_lc {
                     0..=9 => {
                         buf_offset = 1;
@@ -189,8 +213,8 @@ impl<'a> Component for Editor<'a> {
                     }
                 }
 
-                for line in 0..y - 1 {
-                    if buff_lc > line.into() {
+                for line in self.shown_lines.0..(self.shown_lines.1 - 1) {
+                    if buff_lc > line {
                         // Line numbers + offset
                         term.print(fg(Color::RGB(153, 153, 102))).unwrap();
 
@@ -215,17 +239,16 @@ impl<'a> Component for Editor<'a> {
                         term.print(" ").unwrap();
 
                         // Render text
-                        let curr_line = cur_buf.rope.line(line.into());
+                        let curr_line = cur_buf.rope.line(line);
                         draw_line(term, &curr_line, x).unwrap();
                     } else {
                         term.print("~").unwrap();
                         term.set_cursor_to(term.x_pos, term.y_pos + 1).unwrap();
                     }
                 }
-                term.set_cursor_to(buf_offset + 2, 1).unwrap();
+                term.set_cursor_to(buf_offset + 2, curr_y).unwrap();
             }
         }
-
         term.show_cursor().unwrap();
 
         Ok(())
@@ -239,15 +262,15 @@ impl<'a> Component for Editor<'a> {
         for key in keys {
             match key {
                 Key::Ctrl('q') => return Ok(()),
-                Key::Up | Key::Char('j') => {
-                    if let Err(e) = self.move_up(term) {
+                Key::Up | Key::Char('k') => {
+                    if let Err(_e) = self.move_up(term) {
                         continue;
                     }
                 }
-                Key::Down | Key::Char('k') => {
+                Key::Down | Key::Char('j') => {
                     if let Some(e) = &self.editor {
                         if let Some(b) = e.cur_buf {
-                            if let Err(i) = self.move_down(term, b) {
+                            if let Err(_i) = self.move_down(term, b) {
                                 continue;
                             }
                         }

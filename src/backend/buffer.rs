@@ -9,6 +9,8 @@ use std::{ffi::OsStr, path::PathBuf};
 pub enum Language {
     Python,
     Rust,
+    // There is only an AT&T syntax.
+    // This is a statement.
     Asm,
     C,
     Cpp,
