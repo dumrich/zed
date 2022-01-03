@@ -91,6 +91,7 @@ pub struct Editor<'a> {
     shown_lines: (usize, usize), // Exclusive, inclusive
 }
 
+type MoveResult = Result<(), Error>;
 impl<'a> Editor<'a> {
     pub fn set_editor(mut self, e: editor::Editor<'a>) -> Editor<'a> {
         self.editor = Some(e);
@@ -105,20 +106,21 @@ impl<'a> Editor<'a> {
     }
 
     // Movement methods
-    pub fn move_up<T: Write>(&mut self, term: &mut Terminal<T>) -> Result<(), Error> {
+    pub fn move_up<T: Write>(&mut self, term: &mut Terminal<T>) -> MoveResult {
         if self.current_line > 1 {
             self.current_line -= 1;
-            term.set_cursor_to(term.x_pos, term.y_pos - 1).unwrap();
+            if self.current_line > self.shown_lines.0 {
+                term.set_cursor_to(term.x_pos, term.y_pos - 1).unwrap();
+            } else {
+                self.shown_lines.0 -= 1;
+                self.view(term).unwrap();
+            }
             return Ok(());
         }
         Err(Error::CouldNotMove)
     }
 
-    pub fn move_down<T: Write>(
-        &mut self,
-        term: &mut Terminal<T>,
-        buf: &Buffer<'a>,
-    ) -> Result<(), Error> {
+    pub fn move_down<T: Write>(&mut self, term: &mut Terminal<T>, buf: &Buffer<'a>) -> MoveResult {
         if buf.line_count > self.current_line {
             self.current_line += 1;
             if self.current_line <= (self.shown_lines.1) {
@@ -132,11 +134,14 @@ impl<'a> Editor<'a> {
         Err(Error::CouldNotMove)
     }
 
-    fn move_to_line<T: Write>(&mut self, term: &mut Terminal<T>) -> Result<(), Error> {
+    pub fn move_right<T: Write>(&mut self, term: &mut Terminal<T>, buf: &Buffer<'a>) -> MoveResult {
+    }
+
+    fn move_to_line<T: Write>(&mut self, term: &mut Terminal<T>) -> MoveResult {
         Ok(())
     }
 
-    fn move_to_char<T: Write>(&mut self, term: &mut Terminal<T>) -> Result<(), Error> {
+    fn move_to_char<T: Write>(&mut self, term: &mut Terminal<T>) -> MoveResult {
         Ok(())
     }
 }

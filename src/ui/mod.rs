@@ -57,6 +57,8 @@ fn render_editor<T: Write>(file_path: PathBuf, term: &mut Terminal<T>, k: KeyIte
     // Should probably rename this to something else
     let mut editor = editor::Editor::new().set_editor(e);
     editor.push_buf(&b);
+
+    term.switch_screen().unwrap();
     editor.render(term, k).unwrap();
     editor.destroy(term)
 }

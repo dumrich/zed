@@ -1,5 +1,9 @@
 # `zed`
-Text Editor
+An IDE for C programming
+- [ ] Text Editor (called `zed`)
+- [ ] Built in compiler for error checking
+- [ ] Built in parser for syntax highlighting
+- [ ] Built in static memory analyzer
 
 ## Todo
 
@@ -8,7 +12,6 @@ Text Editor
 - [x] Create basic user interface components
     - [x] Dashboard
     - [x] Statusbar
-    
 - [x] Create utility components
     - [x] Generic-over-iterator telescope like finder
     - [x] Live Grep and Live Files
