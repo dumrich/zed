@@ -1,6 +1,6 @@
 # `zed`
 An IDE for C programming
-- [ ] Text Editor (called `zed`)
+- [x] Text Editor (called `zed`)
 - [ ] Built in compiler for error checking
 - [ ] Built in parser for syntax highlighting
 - [ ] Built in static memory analyzer
