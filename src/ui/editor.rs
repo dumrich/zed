@@ -134,8 +134,9 @@ impl<'a> Editor<'a> {
         Err(Error::CouldNotMove)
     }
 
-    pub fn move_right<T: Write>(&mut self, term: &mut Terminal<T>, buf: &Buffer<'a>) -> MoveResult {
-    }
+    //    pub fn move_right<T: Write>(&mut self, term: &mut Terminal<T>, buf: &Buffer<'a>) -> MoveResult {
+    //
+    //    }
 
     fn move_to_line<T: Write>(&mut self, term: &mut Terminal<T>) -> MoveResult {
         Ok(())

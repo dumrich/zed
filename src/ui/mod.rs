@@ -73,6 +73,7 @@ pub fn render_ui<T: Write>(cli: &Cli, term: &mut Terminal<T>, keys: KeyIterator)
             match dashboard.render(term, keys.clone()) {
                 Ok(t) => match t {
                     Target::File(m) => {
+                        term.set_cursor_to(1, 1).unwrap();
                         render_editor(m, term, keys).unwrap();
                     }
                     _ => (),
