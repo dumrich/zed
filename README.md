@@ -19,14 +19,14 @@ An IDE for C programming
         - [ ] Remove flashing (lessen the number of dirs)
 - [-] Text Editing
     - [x] Display Text
-    - [-] Move around text
-    - [ ] Edit and save text
-    - [ ] Keybindings
+    - [x] Move around text
+    - [x] Edit and save text
+    - [x] Keybindings
 - [ ] Configuration
-    - [ ] Package Management
-    - [ ] Essential Packages
+    - [x] Package Management
+    - [-] Essential Packages
         - [ ] Tab bar
-        - [ ] Find/Replace
+        - [x] Find/Replace
         - [ ] Undo/Redo
         - [ ] Copy and Paste
 ### Finishing touches
